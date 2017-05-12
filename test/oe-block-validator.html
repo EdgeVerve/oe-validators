@@ -1,0 +1,304 @@
+<!-- 
+  ©2016-2017 EdgeVerve Systems Limited (a fully owned Infosys subsidiary),
+  Bangalore, India. All Rights Reserved.
+-->
+<!doctype html>
+
+<html>
+
+<head>
+
+  <title>oe-form-behavior tests</title>
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+
+  <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+  <script src="../../web-component-tester/browser.js"></script>
+  <script src="../../iron-test-helpers/test-helpers.js"></script>
+  <script src="../../iron-test-helpers/mock-interactions.js"></script>
+
+  <link rel="import" href="../behaviors/oe-form-validation-behavior.html">
+  <link rel="import" href="../behaviors/oe-model-handler.html">
+  <link rel="import" href="../oe-block-validator.html">
+
+  <link rel="import" href="../../polymer/polymer.html">
+  <link rel="import" href="../../paper-input/paper-input.html">
+  <link rel="import" href="../../oe-input/oe-decimal.html">
+  <link rel="import" href="../../oe-input/oe-input.html">
+  <link rel="import" href="../../oe-date/oe-date.html">
+
+
+
+</head>
+
+<body>
+
+
+  <dom-module id="test-form">
+    <template>
+
+      <oe-block-validator id="block1">
+        <oe-input required field-id="firstName" value={{vm.firstName}}></oe-input>
+        <oe-input required field-id="lastName" value={{vm.lastName}}></oe-input>
+        <oe-decimal field-id="principalAmount"></oe-decimal>
+        <oe-decimal field-id="maturityAmount"></oe-decimal>
+        <oe-date required field-id="startDate" value={{vm.startDate}}></oe-date>
+        <oe-date field-id="endDate"></oe-date>
+        <paper-input required field-id="nonEvControl"></paper-input>
+        <paper-button id="intValidate">Validate from Within</paper-button>
+
+      </oe-block-validator>
+      <oe-block-validator id="block2">
+        <oe-checkbox field-id="whtApplicable"></oe-checkbox>
+        <oe-checkbox field-id="vatApplicable"></oe-checkbox>
+        <oe-textarea required field-id="userComments"></oe-textarea>
+        <oe-textarea field-id="systemComments"></oe-textarea>
+        <oe-input required field-id="startDate" value={{vm.startDate}}></oe-input>
+      </oe-block-validator>
+
+      <oe-input field-id="startDate"></oe-input>
+
+      <paper-button id="extValidate">Validate From Outside</paper-button>
+    </template>
+  </dom-module>
+
+  <script>
+    HTMLImports.whenReady(function () {
+      Polymer({
+        is: 'test-form',
+        behaviors: [baseUtils.FormValidationBehavior, baseUtils.ModelHandler],
+        properties: {
+          vm: {
+            type: Object
+          }
+        }
+      });
+    });
+
+  </script>
+
+
+  <test-fixture id="simple-form">
+    <template>
+      <test-form></test-form>
+    </template>
+  </test-fixture>
+
+  <script>
+    suite('register-field', function () {
+
+      test('fields registers at appropriate level and not above', function () {
+        var form = fixture('simple-form');
+        var fieldId = 'firstName'
+        var control = form.querySelector('oe-input[field-id=firstName]');
+        var block1 = form.querySelector('#block1');
+
+        expect(control).to.exist;
+
+        //should be in block1 only
+        form.fieldControls && expect(form.fieldControls).to.not.contain.key(fieldId);
+
+        expect(block1.fieldControls).to.exist;
+        expect(block1.fieldControls).to.contain.key(fieldId);
+        expect(block1.fieldControls[fieldId].length).to.be.at.least(1);
+        expect(block1.fieldControls[fieldId]).to.contain(control);
+        expect(control._parent).to.equal(block1);
+
+        //element should register only once.
+        var index = block1.fieldControls[fieldId].indexOf(control);
+        var lastIndex = block1.fieldControls[fieldId].lastIndexOf(control);
+        expect(index).to.equal(lastIndex);
+
+      });
+      test('non-ev control is registered in block-validator', function () {
+        var form = fixture('simple-form');
+        var fieldId = 'nonEvControl'
+        var control = form.querySelector('paper-input[field-id=nonEvControl]');
+        var block1 = form.querySelector('#block1');
+
+        expect(block1.fieldControls).to.exist;
+        expect(block1.fieldControls).to.contain.key(fieldId);
+        expect(block1.fieldControls[fieldId].length).to.be.at.least(1);
+        expect(block1.fieldControls[fieldId]).to.contain(control);
+        expect(control._parent).to.equal(block1);
+
+        //element should register only once.
+        var index = block1.fieldControls[fieldId].indexOf(control);
+        var lastIndex = block1.fieldControls[fieldId].lastIndexOf(control);
+        expect(index).to.equal(lastIndex);
+      });
+      test('oe-validate without-id triggers validation on current block ONLY', function () {
+        var form = fixture('simple-form');
+        var block1 = form.querySelector('#block1');
+        var block2 = form.querySelector('#block2');
+
+        var intValidateButton = block1.querySelector('#intValidate');
+
+        form.errors && expect(form.errors).to.be.empty;
+        block1.errors && expect(block1.errors).to.be.empty;
+
+        intValidateButton.fire('oe-validate');
+
+        form.errors && expect(form.errors).to.be.empty;
+        expect(block1.errors).to.not.be.empty;
+        block2.errors && expect(block2.errors).to.be.empty;
+      });
+
+      test('oe-validate with-id can trigger validation on another block', function (done) {
+        var form = fixture('simple-form');
+        var block1 = form.querySelector('#block1');
+        var block2 = form.querySelector('#block2');
+
+        var intValidateButton = block1.querySelector('#intValidate');
+
+        form.errors && expect(form.errors).to.be.empty;
+        block1.errors && expect(block1.errors).to.be.empty;
+        block2.errors && expect(block2.errors).to.be.empty;
+
+        block2.addEventListener('oe-validator-error', function (e) { // eslint-disable-line no-unused-vars
+
+          Polymer.Base.async(function () {
+            block1.errors && expect(block1.errors).to.be.empty;
+            expect(block2.errors).to.not.be.empty;
+            expect(form.errors).to.not.be.empty;
+            expect(form.errors.length).to.equal(1);
+            expect(form.errors[0].validator).to.equal(block2);
+            done();
+          });
+        });
+        intValidateButton.fire('oe-validate', {
+          id: 'block2'
+        });
+
+      });
+
+
+      test('oe-validate from outside the block (with-id) triggers validation', function (done) {
+        var form = fixture('simple-form');
+        var block1 = form.querySelector('#block1');
+        var block2 = form.querySelector('#block2');
+
+        var extValidateButton = form.querySelector('#extValidate');
+
+        form.errors && expect(form.errors).to.be.empty;
+        block1.errors && expect(block1.errors).to.be.empty;
+        block2.errors && expect(block2.errors).to.be.empty;
+
+        extValidateButton.fire('oe-validate', {
+          id: 'block1'
+        });
+
+        block1.addEventListener('oe-validator-error', function (e) { // eslint-disable-line no-unused-vars
+          Polymer.Base.async(function () {
+            expect(form.errors).to.not.be.empty;
+            expect(form.errors.length).to.equal(1);
+            expect(form.errors[0].validator).to.equal(block1);
+            done();
+          });
+        });
+      });
+
+      test('(with-id) validation callback is invoked with validity status', function (done) {
+        var form = fixture('simple-form');
+        var block1 = form.querySelector('#block1');
+        var intValidateButton = block1.querySelector('#intValidate');
+        intValidateButton.fire('oe-validate', {
+          callback: function (state) {
+            expect(state.valid).to.be.false;
+            done();
+          }
+        });
+      });
+
+
+      test('(without-id) validation callback is invoked with validity status', function (done) {
+        var form = fixture('simple-form');
+        var block1 = form.querySelector('#block1');
+        var intValidateButton = block1.querySelector('#intValidate');
+        intValidateButton.fire('oe-validate', {
+          id: 'block2',
+          callback: function (state) {
+            expect(state.valid).to.be.false;
+            done();
+          }
+        });
+      });
+
+      test('oe-validate event triggers oe-validation-result', function (done) {
+        var form = fixture('simple-form');
+        var block1 = form.querySelector('#block1');
+
+        var intValidateButton = block1.querySelector('#intValidate');
+
+        form.errors && expect(form.errors).to.be.empty;
+        block1.errors && expect(block1.errors).to.be.empty;
+
+        block1.addEventListener('oe-validation-result', function (e) {
+          form.errors && expect(form.errors).to.be.empty;
+          expect(block1.errors).to.not.be.empty;
+          expect(e.detail.valid).to.be.false;
+          expect(e.detail.error).to.equal(form.errors[0]);
+          done();
+        });
+
+        intValidateButton.fire('oe-validate');
+
+      });
+
+      test('oe-validate handled by form, sets appropriate errors', function (done) {
+        var form = fixture('simple-form');
+        var block1 = form.querySelector('#block1');
+
+        var extValidateButton = form.querySelector('#extValidate');
+
+        extValidateButton.fire('oe-validate');
+
+        form.addEventListener('oe-validation-result', function (e) { // eslint-disable-line no-unused-vars
+          expect(form.errors).to.not.be.empty;
+          expect(block1.errors).to.not.be.empty;
+          expect(form.errors[0].validator).to.equal(block1);
+          done();
+        });
+      });
+
+      test('revalidation clears block validator error', function (done) {
+        var form = fixture('simple-form');
+        var block1 = form.querySelector('#block1');
+        var block2 = form.querySelector('#block2');
+
+        var extValidateButton = form.querySelector('#extValidate');
+
+        var firstCheck = true;
+        form.addEventListener('oe-validation-result', function () {
+          if (firstCheck) {
+            firstCheck = false;
+            expect(form.errors).to.not.be.empty;
+            expect(block1.errors).to.not.be.empty;
+            expect(form.errors[0].validator).to.equal(block1);
+            form.set('vm', {
+              firstName: 'Jilson',
+              lastName: 'John',
+              startDate: '03-04-2016',
+              'userComments': 'Lorem'
+            });
+            form.addEventListener('oe-validation-result', function (e) { // eslint-disable-line no-unused-vars
+              expect(form.errors).to.be.empty;
+              expect(block1.errors).to.be.empty;
+              expect(block2.errors).to.be.empty;
+              done();
+            });
+            extValidateButton.fire('oe-validate');
+          }
+        });
+        extValidateButton.fire('oe-validate');
+      });
+    });
+
+  </script>
+
+</body>
+
+</html>

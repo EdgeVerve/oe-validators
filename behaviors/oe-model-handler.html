@@ -5,7 +5,7 @@
 <link rel="import" href="../../polymer/polymer.html">
 <link rel="import" href="../../oe-ajax/oe-ajax.html">
 <!--
-`baseUtils.ModelHandler` behavior is intended to perform all the model handling
+`OEUtils.ModelHandler` behavior is intended to perform all the model handling
 responsibilities, like fetch, save, reset, refresh etc.
 
 On-Attached, the behavior scans through the shadow-dom for all the elements
@@ -29,9 +29,9 @@ For workflow support, it also scans for elements having oe-workflow-action="..."
 
 -->
 <script>
-  var baseUtils = baseUtils || {};
+  var OEUtils = OEUtils || {};
 
-  baseUtils.ModelHandler = {
+  OEUtils.ModelHandler = {
     ready: function () {
       this._middlewares = {
         preInsert: [],
@@ -194,7 +194,7 @@ For workflow support, it also scans for elements having oe-workflow-action="..."
         self.fire('oe-formdata-loaded', event.detail.response);
       });
       ajaxCall.addEventListener('error', function (err) {
-        self.fire('oe-show-error', baseUtils.extractErrorMessage(err));
+        self.fire('oe-show-error', OEUtils.extractErrorMessage(err));
       });
       ajaxCall.generateRequest();
     },
@@ -321,7 +321,7 @@ For workflow support, it also scans for elements having oe-workflow-action="..."
 
       if (model[uniqueKey]) {
         isUpdate = true;
-        model._newVersion = baseUtils.UUID.generate();
+        model._newVersion = OEUtils.UUID.generate();
       }
 
       var headers = {};
@@ -361,7 +361,7 @@ For workflow support, it also scans for elements having oe-workflow-action="..."
                 });
             });
             ajaxCall.addEventListener('error', function (err) {
-              self.fire('oe-show-error', baseUtils.extractErrorMessage(err));
+              self.fire('oe-show-error', OEUtils.extractErrorMessage(err));
             });
 
             ajaxCall.generateRequest();
@@ -401,7 +401,7 @@ For workflow support, it also scans for elements having oe-workflow-action="..."
               });
             });
             ajaxCall.addEventListener('error', function (err) {
-              self.fire('oe-show-error', baseUtils.extractErrorMessage(err));
+              self.fire('oe-show-error', OEUtils.extractErrorMessage(err));
             });
 
             ajaxCall.generateRequest();
@@ -433,7 +433,7 @@ For workflow support, it also scans for elements having oe-workflow-action="..."
       });
       ajaxCall.addEventListener('error', function (err) {
         self.set(responseTo, undefined);
-        self.fire('oe-show-error', baseUtils.extractErrorMessage(err));
+        self.fire('oe-show-error', OEUtils.extractErrorMessage(err));
       });
       ajaxCall.generateRequest();
     },
@@ -465,7 +465,7 @@ For workflow support, it also scans for elements having oe-workflow-action="..."
         self.fire('oe-workflow-action-completed', event.detail.response);
       });
       ajaxCall.addEventListener('error', function (err) {
-        self.fire('oe-workflow-action-failed', baseUtils.extractErrorMessage(err));
+        self.fire('oe-workflow-action-failed', OEUtils.extractErrorMessage(err));
       });
 
       ajaxCall.generateRequest();

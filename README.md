@@ -1,5 +1,7 @@
 # \<oe-validators\>
 
+>## This project is no longer maintained. Form validators are now part of [oe-ui-forms](https://github.com/EdgeVerve/oe-ui-forms)
+
 `<oe-validators>` provides a collection of elements for validation of forms.
 
 This repo consists of the following validator elements
